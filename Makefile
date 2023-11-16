@@ -1,0 +1,9 @@
+.PHONY: test lint
+
+
+test:
+	go test -race ./...
+
+lint:
+	go vet ./...
+	golint ./...
