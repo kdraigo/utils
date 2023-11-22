@@ -185,7 +185,6 @@ func (ss *SharedStateSuite) TestHandlersWithCancelChain() {
 
 	ss.Equal(fmt.Errorf("%v %v", someErrorFromFirstPromise, someErrorFromSecondPromise), firstFuture.Wait())
 	ss.Equal(int32(9), iter.Load())
-
 }
 
 func (ss *SharedStateSuite) TestHandlersWithTimeout() {
