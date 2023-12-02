@@ -22,11 +22,11 @@ func (ss *SharedStateSuite) SetupTest() {
 	// Setup any common test fixtures here
 }
 
-func (ss *SharedStateSuite) TestAsyncTask() {
-	// Your test logic for AsyncTask
+func (ss *SharedStateSuite) TearDownTest() {
 }
 
-func (ss *SharedStateSuite) TearDownTest() {
+func (ss *SharedStateSuite) TestAsyncTask() {
+	// Your test logic for AsyncTask
 }
 
 func (ss *SharedStateSuite) TestSendAndReceiveWithCancel() {

@@ -19,7 +19,7 @@ func NewMap[KeyType comparable, ValueType any](size int) *Map[KeyType, ValueType
 	}
 }
 
-// WrapMap setting existing map under guard.
+// WrapMap setting existing map under guard. Unsafe.
 func WrapMap[KeyType comparable, ValueType any](data map[KeyType]ValueType) *Map[KeyType, ValueType] {
 	if len(data) == 0 {
 		data = make(map[KeyType]ValueType)
