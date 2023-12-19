@@ -121,8 +121,7 @@ func (sd *sharedState[DataType]) OnDone(onDone func()) Promise[DataType] {
 
 func (sd *sharedState[DataType]) Get() DataType {
 	if sd.isDataHandlerExists.Load() {
-		var data DataType
-		return data
+		panic("callback already bound")
 	}
 	return <-sd.channel
 }
@@ -131,7 +130,7 @@ func (sd *sharedState[DataType]) TryGet(duration time.Duration) (DataType, bool)
 	var data DataType
 	ok := false
 	if sd.isDataHandlerExists.Load() {
-		return data, ok
+		panic("callback already bound")
 	}
 	select {
 	case data, ok = <-sd.channel:
