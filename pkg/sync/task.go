@@ -8,25 +8,53 @@ import (
 	"time"
 )
 
-// Future is receiver and task controller.
+// Future is an interface representing a combination of a future/promise and a task controller.
 type Future[DataType any] interface {
+	// Get blocks the current goroutine until data is received from the channel.
+	// If an OnData callback is bound, calling Get will panic.
 	Get() DataType
+
+	// TryGet attempts to receive data within the specified duration.
+	// If data is not ready, it returns the default DataType and false.
+	// If an OnData callback is bound, calling TryGet will panic.
 	TryGet(duration time.Duration) (DataType, bool)
 
+	// OnData binds a callback to handle the received data.
+	// The callback signature must be func(data DataType) error.
+	// If an error is returned from the handler callback, it terminates the child goroutine.
 	OnData(onData func(data DataType) error) Future[DataType]
+
+	// OnFailure binds a callback for error handling.
+	// Any error occurring during the execution of the child goroutine must be handled after termination.
 	OnFailure(onFailure func(err error)) Future[DataType]
 
+	// Cancel terminates the context associated with the child goroutine.
 	Cancel()
+
+	// Wait blocks the parent goroutine, waiting for the child to finish.
+	// It returns an error if the child goroutine encountered an error.
 	Wait() error
+
+	// IsInProgress checks if the child goroutine is still in progress.
 	IsInProgress() bool
 }
 
-// Promise is sender and notifier about events.
+// Promise is an interface representing a sender and notifier about events.
 type Promise[DataType any] interface {
+	// Send sends data through the channel.
+	// If an OnDone callback is bound, invoking the handler in the current goroutine.
 	Send(data DataType) error
+
+	// CloseChannel closes the channel.
 	CloseChannel()
+
+	// Fail sets an error and terminates execution.
 	Fail(err error)
+
+	// OnDone binds a callback function for handling steps on termination.
 	OnDone(onClose func()) Promise[DataType]
+
+	// Context returns the context of the Promise.
 	Context() context.Context
 }
 
@@ -189,26 +217,54 @@ func (sd *sharedState[DataType]) Fail(err error) {
 	sd.Cancel()
 }
 
-// AsyncTask runs separate task in goroutine with handlers.
-func AsyncTask[DataType any](ctx context.Context, channelBufSize int,
-	asyncFunc func(promise Promise[DataType])) Future[DataType] {
-
+// AsyncTask runs a task in a separate goroutine with handlers.
+// It takes a context, channel buffer size, and an asynchronous function.
+// The asynchronous function receives a Promise, which is used for sending data,
+// handling termination steps, and managing the context.
+func AsyncTask[DataType any](
+	ctx context.Context,
+	channelBufSize int,
+	asyncFunc func(promise Promise[DataType]),
+) Future[DataType] {
+	// Create a shared state with cancellation for the asynchronous task.
 	sharedState := newSharedStateWithCancel[DataType](ctx, channelBufSize)
+
+	// Start a new goroutine to execute the asynchronous function.
 	go func() {
+		// Ensure cancellation of the shared state on goroutine exit.
 		defer sharedState.Cancel()
+
+		// Execute the asynchronous function, passing the shared state.
 		asyncFunc(sharedState)
 	}()
+
+	// Return the shared state as a Future for monitoring progress.
 	return sharedState
 }
 
-// AsyncTaskWithTimeOut runs separate task in goroutine with handlers and timeout.
-func AsyncTaskWithTimeOut[DataType any](ctx context.Context, channelBufSize int, duration time.Duration,
-	asyncFunc func(promise Promise[DataType])) Future[DataType] {
-
+// AsyncTaskWithTimeOut runs a task in a separate goroutine with handlers and a timeout.
+// It takes a context, channel buffer size, timeout duration, and an asynchronous function.
+// The asynchronous function receives a Promise, which is used for sending data,
+// handling termination steps, and managing the context.
+// The task will be canceled if it exceeds the specified timeout duration.
+func AsyncTaskWithTimeOut[DataType any](
+	ctx context.Context,
+	channelBufSize int,
+	duration time.Duration,
+	asyncFunc func(promise Promise[DataType]),
+) Future[DataType] {
+	// Create a shared state with timeout for the asynchronous task.
 	sharedState := newSharedStateWithTimeout[DataType](ctx, channelBufSize, duration)
+
+	// Start a new goroutine to execute the asynchronous function.
 	go func() {
+		// Ensure cancellation of the shared state on goroutine exit.
 		defer sharedState.Cancel()
+
+		// Execute the asynchronous function, passing the shared state.
 		asyncFunc(sharedState)
 	}()
+
+	// Return the shared state as a Future for monitoring progress.
 	return sharedState
 }
