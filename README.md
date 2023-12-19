@@ -1,8 +1,5 @@
 # kdraigo/utils
 
-*** Providing functionality for managing asynchronous tasks. ***
-
-
 # Concurrent Task Management in Go
 
 This Go package provides functionality for managing concurrent tasks using futures and promises. It includes interfaces for handling asynchronous tasks, cancellation, timeouts, and event callbacks.
